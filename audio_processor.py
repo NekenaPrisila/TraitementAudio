@@ -2,12 +2,13 @@ import struct
 import numpy as np
 import pyaudio
 import threading
-from scipy.fftpack import fft, ifft
+from scipy.fft import fft, ifft
 
 class AudioProcessor:
     def __init__(self, file_path):
         self.file_path = file_path
         self.audio_data = None
+        self.original_audio_data = None  # Stocker les données audio originales
         self.sample_rate = None
         self.num_channels = None
         self.bit_depth = None
@@ -40,6 +41,12 @@ class AudioProcessor:
             # Lire les données audio brutes
             raw_data = file.read(subchunk_size)
             self.audio_data = np.frombuffer(raw_data, dtype=np.int16 if self.bit_depth == 16 else np.int8)
+            self.original_audio_data = self.audio_data.copy()  # Sauvegarder les données originales
+
+    def reset_audio(self):
+        """Réinitialise les données audio à leur état original."""
+        if self.original_audio_data is not None:
+            self.audio_data = self.original_audio_data.copy()
 
     def play_audio(self):
         """Joue le son à partir des données audio dans un thread séparé."""
