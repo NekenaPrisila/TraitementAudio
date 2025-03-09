@@ -64,6 +64,12 @@ class AudioProcessorGUI:
         if file_path:
             self.audio_processor = AudioProcessor(file_path)
             self.audio_processor.load_audio()
+            # Accéder au tableau de bits (données audio brutes)
+            audio_data = self.audio_processor.get_audio_data()
+
+            # Afficher les premières valeurs du tableau
+            print(audio_data[:10])
+
             self.plot_audio()
             self.audio_processor.play_audio()  # Jouer le son après chargement
 
@@ -71,6 +77,9 @@ class AudioProcessorGUI:
         """Affiche le signal audio."""
         self.ax.clear()
         self.ax.plot(self.audio_processor.get_audio_data())
+        self.ax.set_xlabel("Temps (échantillons)")
+        self.ax.set_ylabel("Amplitude")
+        self.figure.tight_layout()  # Ajuste automatiquement les marges
         self.canvas.draw()
 
     def reset_and_process(self, process_function, *args):
