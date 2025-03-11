@@ -120,7 +120,7 @@ class AudioProcessor:
 
         # Créer un masque pour atténuer les fréquences indésirables
         mask = np.logical_or(freqs < freq_range[0], freqs > freq_range[1])
-        spectrum[mask] *= 0.1  # Atténuer les fréquences en dehors de la plage
+        spectrum[mask] *= 0  # Atténuer les fréquences en dehors de la plage a 100%
 
         # Reconstruire le signal audio à partir du spectre modifié
         self.audio_data = np.real(ifft(spectrum))
@@ -134,6 +134,49 @@ class AudioProcessor:
         # Trouver et afficher la valeur la plus élevée
         max_value = max(self.audio_data)
         print(f"La valeur la plus élevée dans les données audio apres noise_reduction est : {max_value}")
+
+    def remove_noise(self, noise_file_path):
+        """
+        Enlève un bruit spécifique du signal audio en soustrayant le spectre du bruit.
+        :param noise_file_path: Chemin du fichier audio contenant le bruit à soustraire.
+        """
+        # Charger le bruit
+        noise_processor = AudioProcessor(noise_file_path)
+        noise_processor.load_audio()
+
+        # Vérifier que les paramètres audio correspondent (sample_rate, bit_depth, etc.)
+        if (self.sample_rate != noise_processor.sample_rate or
+            self.bit_depth != noise_processor.bit_depth or
+            self.num_channels != noise_processor.num_channels):
+            raise ValueError("Les paramètres audio du bruit ne correspondent pas au signal principal.")
+
+        # Appliquer la FFT pour obtenir le spectre du signal principal et du bruit
+        signal_spectrum = fft(self.audio_data)
+        noise_spectrum = fft(noise_processor.audio_data)
+
+        # S'assurer que les spectres ont la même longueur
+        min_length = min(len(signal_spectrum), len(noise_spectrum))
+        signal_spectrum = signal_spectrum[:min_length]
+        noise_spectrum = noise_spectrum[:min_length]
+
+        # Soustraire le spectre du bruit du spectre du signal principal
+        cleaned_spectrum = signal_spectrum - noise_spectrum
+
+        # Reconstruire le signal audio à partir du spectre modifié
+        self.audio_data = np.real(ifft(cleaned_spectrum))
+
+        # Limiter les valeurs en fonction de la profondeur de bits
+        if self.bit_depth == 8:
+            self.audio_data = np.clip(self.audio_data, -256, 255).astype(np.uint8)
+        elif self.bit_depth == 16:
+            self.audio_data = np.clip(self.audio_data, -32768, 32767).astype(np.int16)
+        elif self.bit_depth == 24:
+            self.audio_data = np.clip(self.audio_data, -8388608, 8388607).astype(np.int32)
+
+        print("After noise removal :", self.audio_data[:10])
+        # Trouver et afficher la valeur la plus élevée
+        max_value = max(self.audio_data)
+        print(f"La valeur la plus élevée dans les données audio après suppression du bruit est : {max_value}")
 
     def get_audio_data(self):
         """Retourne les données audio pour affichage."""

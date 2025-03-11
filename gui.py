@@ -2,13 +2,14 @@ import tkinter as tk
 from tkinter import filedialog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from audio_processor import AudioProcessor
+from audio_processor import AudioProcessor  # Assurez-vous que le fichier audio_processor.py est dans le même répertoire
 
 class AudioProcessorGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Traitement de Son")
         self.audio_processor = None
+        self.noise_file_path = None  # Chemin du fichier de bruit
 
         # Interface
         self.load_button = tk.Button(root, text="Charger un fichier audio", command=self.load_audio)
@@ -57,6 +58,17 @@ class AudioProcessorGUI:
         self.noise_reduction_button = tk.Button(root, text="Anti-bruit", command=self.noise_reduction)
         self.noise_reduction_button.pack()
 
+        # Charger le fichier de bruit
+        self.load_noise_button = tk.Button(root, text="Charger le fichier de bruit", command=self.load_noise)
+        self.load_noise_button.pack()
+
+        self.noise_file_label = tk.Label(root, text="Aucun fichier de bruit chargé")
+        self.noise_file_label.pack()
+
+        # Bouton pour supprimer le bruit
+        self.remove_noise_button = tk.Button(root, text="Supprimer le bruit", command=self.remove_noise)
+        self.remove_noise_button.pack()
+
         # Graphique
         self.figure, self.ax = plt.subplots()
         self.canvas = FigureCanvasTkAgg(self.figure, master=root)
@@ -79,6 +91,12 @@ class AudioProcessorGUI:
             print(f"La valeur la plus élevée dans les données audio est : {max_value}")
 
             self.plot_audio()
+
+    def load_noise(self):
+        """Charge un fichier audio de bruit."""
+        self.noise_file_path = filedialog.askopenfilename(filetypes=[("Fichiers WAV", "*.wav")])
+        if self.noise_file_path:
+            self.noise_file_label.config(text=f"Fichier de bruit chargé : {self.noise_file_path}")
 
     def play_original(self):
         """Joue le son original."""
@@ -128,8 +146,16 @@ class AudioProcessorGUI:
         except ValueError:
             print("Veuillez entrer des nombres valides pour les fréquences.")
 
+    def remove_noise(self):
+        """Supprime le bruit du signal audio."""
+        if self.audio_processor and self.noise_file_path:
+            self.reset_and_process(self.audio_processor.remove_noise, self.noise_file_path)
+        else:
+            print("Veuillez charger un fichier audio et un fichier de bruit.")
+
 # Lancer l'application
 if __name__ == "__main__":
     root = tk.Tk()
     app = AudioProcessorGUI(root)
     root.mainloop()
+    
