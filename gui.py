@@ -14,6 +14,10 @@ class AudioProcessorGUI:
         self.load_button = tk.Button(root, text="Charger un fichier audio", command=self.load_audio)
         self.load_button.pack()
 
+        # Bouton Play pour jouer le son original
+        self.play_button = tk.Button(root, text="Play", command=self.play_original)
+        self.play_button.pack()
+
         # Paramètres d'amplification
         self.amplify_label = tk.Label(root, text="Facteur d'amplification:")
         self.amplify_label.pack()
@@ -28,7 +32,7 @@ class AudioProcessorGUI:
         self.anti_distortion_label = tk.Label(root, text="Seuil d'anti-distortion:")
         self.anti_distortion_label.pack()
         self.anti_distortion_entry = tk.Entry(root)
-        self.anti_distortion_entry.insert(0, "16384")  # Valeur par défaut
+        self.anti_distortion_entry.insert(0, "2000")  # Valeur par défaut
         self.anti_distortion_entry.pack()
 
         self.anti_distortion_button = tk.Button(root, text="Anti-distortion", command=self.anti_distortion)
@@ -70,14 +74,23 @@ class AudioProcessorGUI:
             # Afficher les premières valeurs du tableau
             print(audio_data[:10])
 
+            # Trouver et afficher la valeur la plus élevée
+            max_value = max(audio_data)
+            print(f"La valeur la plus élevée dans les données audio est : {max_value}")
+
             self.plot_audio()
-            self.audio_processor.play_audio()  # Jouer le son après chargement
+
+    def play_original(self):
+        """Joue le son original."""
+        if self.audio_processor:
+            self.audio_processor.reset_audio()  # Réinitialiser à l'original
+            self.audio_processor.play_audio()  # Jouer le son original
 
     def plot_audio(self):
         """Affiche le signal audio."""
         self.ax.clear()
         self.ax.plot(self.audio_processor.get_audio_data())
-        self.ax.set_xlabel("Temps (échantillons)")
+        self.ax.set_xlabel("Temps")
         self.ax.set_ylabel("Amplitude")
         self.figure.tight_layout()  # Ajuste automatiquement les marges
         self.canvas.draw()
@@ -114,4 +127,9 @@ class AudioProcessorGUI:
             self.reset_and_process(self.audio_processor.noise_reduction, (freq_min, freq_max))
         except ValueError:
             print("Veuillez entrer des nombres valides pour les fréquences.")
-            
+
+# Lancer l'application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = AudioProcessorGUI(root)
+    root.mainloop()

@@ -40,8 +40,26 @@ class AudioProcessor:
 
             # Lire les données audio brutes
             raw_data = file.read(subchunk_size)
-            self.audio_data = np.frombuffer(raw_data, dtype=np.int16 if self.bit_depth == 16 else np.int8)
-            self.original_audio_data = self.audio_data.copy()  # Sauvegarder les données originales
+
+            # Convertir les données brutes en un tableau numpy en fonction de la profondeur de bits
+            if self.bit_depth == 8:
+                # Les échantillons 8 bits sont non signés (0 à 255)
+                self.audio_data = np.frombuffer(raw_data, dtype=np.uint8)
+                self.audio_data = self.audio_data.astype(np.int16) - 128  # Convertir en signé
+            elif self.bit_depth == 16:
+                # Les échantillons 16 bits sont signés (-32768 à 32767)
+                self.audio_data = np.frombuffer(raw_data, dtype=np.int16)
+            elif self.bit_depth == 24:
+                # Les échantillons 24 bits doivent être traités différemment
+                self.audio_data = np.frombuffer(raw_data, dtype=np.uint8)
+                self.audio_data = self.audio_data.reshape(-1, 3)  # 3 bytes par échantillon
+                self.audio_data = self.audio_data.dot([1, 256, 65536])  # Convertir en 24 bits
+                self.audio_data = self.audio_data.astype(np.int32)  # Convertir en entier signé
+            else:
+                raise ValueError("Profondeur de bits non supportée : {}".format(self.bit_depth))
+
+            # Sauvegarder les données originales pour la réinitialisation
+            self.original_audio_data = self.audio_data.copy()
 
     def reset_audio(self):
         """Réinitialise les données audio à leur état original."""
@@ -52,7 +70,8 @@ class AudioProcessor:
         """Joue le son à partir des données audio dans un thread séparé."""
         def _play():
             p = pyaudio.PyAudio()
-            stream = p.open(format=p.get_format_from_width(self.bit_depth // 8),
+            format = p.get_format_from_width(self.bit_depth // 8)
+            stream = p.open(format=format,
                             channels=self.num_channels,
                             rate=self.sample_rate,
                             output=True)
@@ -66,11 +85,29 @@ class AudioProcessor:
 
     def amplify(self, factor):
         """Amplifie le signal audio par un facteur donné."""
-        self.audio_data = np.clip(self.audio_data * factor, -32768, 32767).astype(np.int16)
+        if self.bit_depth == 8:
+            self.audio_data = np.clip(self.audio_data * factor, -256, 255).astype(np.uint8)
+        elif self.bit_depth == 16:
+            self.audio_data = np.clip(self.audio_data * factor, -32768, 32767).astype(np.int16)
+        elif self.bit_depth == 24:
+            self.audio_data = np.clip(self.audio_data * factor, -8388608, 8388607).astype(np.int32)
+        print("After amplify :", self.audio_data[:10])
+        # Trouver et afficher la valeur la plus élevée
+        max_value = max(self.audio_data)
+        print(f"La valeur la plus élevée dans les données audio apres amplify est : {max_value}")
 
     def anti_distortion(self, threshold):
         """Applique un anti-distortion en limitant les valeurs des bits."""
-        self.audio_data = np.clip(self.audio_data, -threshold, threshold)
+        if self.bit_depth == 8:
+            self.audio_data = np.clip(self.audio_data, -threshold, threshold).astype(np.uint8)
+        elif self.bit_depth == 16:
+            self.audio_data = np.clip(self.audio_data, -threshold, threshold).astype(np.int16)
+        elif self.bit_depth == 24:
+            self.audio_data = np.clip(self.audio_data, -threshold, threshold).astype(np.int32)
+        print("After anti_distortion :", self.audio_data[:10])
+        # Trouver et afficher la valeur la plus élevée
+        max_value = max(self.audio_data)
+        print(f"La valeur la plus élevée dans les données audio apres anti_distortion est : {max_value}")
 
     def noise_reduction(self, freq_range):
         """
@@ -86,8 +123,19 @@ class AudioProcessor:
         spectrum[mask] *= 0.1  # Atténuer les fréquences en dehors de la plage
 
         # Reconstruire le signal audio à partir du spectre modifié
-        self.audio_data = np.real(ifft(spectrum)).astype(np.int16)
+        self.audio_data = np.real(ifft(spectrum))
+        if self.bit_depth == 8:
+            self.audio_data = np.clip(self.audio_data, -256, 255).astype(np.uint8)
+        elif self.bit_depth == 16:
+            self.audio_data = np.clip(self.audio_data, -32768, 32767).astype(np.int16)
+        elif self.bit_depth == 24:
+            self.audio_data = np.clip(self.audio_data, -8388608, 8388607).astype(np.int32)
+        print("After noise_reduction :", self.audio_data[:10])
+        # Trouver et afficher la valeur la plus élevée
+        max_value = max(self.audio_data)
+        print(f"La valeur la plus élevée dans les données audio apres noise_reduction est : {max_value}")
 
     def get_audio_data(self):
         """Retourne les données audio pour affichage."""
         return self.audio_data
+    
