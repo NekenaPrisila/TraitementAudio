@@ -96,6 +96,26 @@ class AudioProcessor:
         max_value = max(self.audio_data)
         print(f"La valeur la plus élevée dans les données audio apres amplify est : {max_value}")
 
+    def alea(self):
+        """Remplace toutes les valeurs du tableau par le max si positif, et par le min si négatif."""
+        max_value = max(self.audio_data)
+        min_value = min(self.audio_data)
+
+        # Remplacer les valeurs positives par max_value et les valeurs négatives par min_value
+        self.audio_data = np.where(self.audio_data >= 0, max_value, min_value)
+
+        # Limiter les valeurs en fonction de la profondeur de bits
+        if self.bit_depth == 8:
+            self.audio_data = np.clip(self.audio_data, -128, 127).astype(np.int8)
+        elif self.bit_depth == 16:
+            self.audio_data = np.clip(self.audio_data, -32768, 32767).astype(np.int16)
+        elif self.bit_depth == 24:
+            self.audio_data = np.clip(self.audio_data, -8388608, 8388607).astype(np.int32)
+
+        # Afficher les valeurs extrêmes après modification
+        print(f"La valeur la plus élevée dans les données audio après amplification est : {max_value}")
+        print(f"La valeur la plus basse dans les données audio après amplification est : {min_value}")
+
     def anti_distortion(self, threshold):
         """Applique un anti-distortion en limitant les valeurs des bits."""
         if self.bit_depth == 8:

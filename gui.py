@@ -19,6 +19,10 @@ class AudioProcessorGUI:
         self.play_button = tk.Button(root, text="Play", command=self.play_original)
         self.play_button.pack()
 
+        # Bouton Play pour jouer le son original
+        self.alea_button = tk.Button(root, text="Alea", command=self.alea)
+        self.alea_button.pack()
+
         # Paramètres d'amplification
         self.amplify_label = tk.Label(root, text="Facteur d'amplification:")
         self.amplify_label.pack()
@@ -129,6 +133,10 @@ class AudioProcessorGUI:
         except ValueError:
             print("Veuillez entrer un nombre valide pour l'amplification.")
 
+    def alea(self):
+        """Alea."""
+        self.reset_and_process(self.audio_processor.alea)
+
     def anti_distortion(self):
         """Applique l'anti-distortion et joue le son."""
         try:
@@ -158,4 +166,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = AudioProcessorGUI(root)
     root.mainloop()
-    
