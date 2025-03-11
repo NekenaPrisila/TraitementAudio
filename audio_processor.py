@@ -113,8 +113,8 @@ class AudioProcessor:
             self.audio_data = np.clip(self.audio_data, -8388608, 8388607).astype(np.int32)
 
         # Afficher les valeurs extrêmes après modification
-        print(f"La valeur la plus élevée dans les données audio après amplification est : {max_value}")
-        print(f"La valeur la plus basse dans les données audio après amplification est : {min_value}")
+        print(f"La valeur la plus élevée dans les données audio après alea est : {max_value}")
+        print(f"La valeur la plus basse dans les données audio après alea est : {min_value}")
 
     def anti_distortion(self, threshold):
         """Applique un anti-distortion en limitant les valeurs des bits."""
